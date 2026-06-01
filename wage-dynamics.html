@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Case study: Lifecycle Wage Dynamics & Inequality — IPUMS CPS Mincer regressions and gender wage gap analysis by Claire Zhou.">
+  <title>Case Study: Lifecycle Wage Dynamics &amp; Inequality | Claire Zhou</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="index.html" class="header__logo">Claire Zhou</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav" aria-label="Main navigation">
+        <ul class="nav__list">
+          <li><a href="index.html#about" class="nav__link">About</a></li>
+          <li><a href="index.html#skills" class="nav__link">Skills</a></li>
+          <li><a href="index.html#experience" class="nav__link">Experience</a></li>
+          <li><a href="index.html#projects" class="nav__link">Projects</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="code-page">
+    <section class="section">
+      <div class="container">
+        <a href="index.html#projects" class="back-link">← Back to Portfolio</a>
+
+        <h1 class="section__title">Case Study: Lifecycle Wage Dynamics &amp; Inequality</h1>
+        <div class="section__divider"></div>
+
+        <!-- Executive Summary -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Executive Summary &amp; Deliverables</h2>
+          <p class="case-study__text">
+            This labor economics study examines how the gender wage gap and college premium evolve
+            across the worker lifecycle using IPUMS CPS microdata. An R-based pipeline cleans and
+            trims 200,000+ observations, then estimates baseline and interaction-rich Mincer
+            regressions to map non-linear earnings trajectories and decompose wage inequality into
+            hours-worked and hourly-rate components.
+          </p>
+          <div class="case-study__actions">
+            <a
+              href="./Lifecycle_Wage_Dynamics_Analysis.pdf"
+              class="btn btn--navy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >View Full Analysis Report (PDF)</a>
+            <a
+              href="./wage_dynamics_model.R"
+              class="btn btn--outline-navy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >View R Script</a>
+          </div>
+        </section>
+
+        <!-- Data Architecture -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Microdata Structure (IPUMS CPS)</h2>
+          <p class="case-study__text">
+            The analysis ingests compressed CPS extract data, applies sample restrictions for prime-age
+            full-time workers, and constructs derived wage measures for regression and visualization.
+          </p>
+          <div class="schema-table-wrapper">
+            <table class="schema-table">
+              <thead>
+                <tr>
+                  <th scope="col">Variable</th>
+                  <th scope="col">Data Type</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>INCWAGE</code></td>
+                  <td>Numeric</td>
+                  <td>Total annual wage and salary income (dependent variable source)</td>
+                </tr>
+                <tr>
+                  <td><code>AGE</code></td>
+                  <td>Integer</td>
+                  <td>Worker age (restricted to 25&ndash;60 for lifecycle analysis)</td>
+                </tr>
+                <tr>
+                  <td><code>EDUC / educ5</code></td>
+                  <td>Categorical</td>
+                  <td>Education level recoded into five ordered categories</td>
+                </tr>
+                <tr>
+                  <td><code>SEX</code></td>
+                  <td>Binary</td>
+                  <td>Gender indicator for wage-gap decomposition</td>
+                </tr>
+                <tr>
+                  <td><code>hourly_wage</code></td>
+                  <td>Derived Float</td>
+                  <td>INCWAGE divided by annual hours (robustness measure)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- R Modeling -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Econometric Modeling (R)</h2>
+          <p class="code-page__intro">
+            Core data pipeline and Mincer regression specification from
+            <code class="code-page__filename">wage_dynamics_model.R</code> — including interaction
+            terms for age, education, and gender.
+          </p>
+
+          <div class="code-block">
+            <pre><code>library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(broom)
+
+data &lt;- read.csv("cps_00002_csv.gz")
+
+df_clean &lt;- data %&gt;%
+  filter(AGE &gt;= 25, AGE &lt;= 60) %&gt;%
+  filter(!is.na(INCWAGE), !is.na(UHRSWORKLY), !is.na(WKSWORK1),
+         !is.na(AGE),     !is.na(EDUC),        !is.na(SEX)) %&gt;%
+  filter(INCWAGE &gt;= 2200) %&gt;%
+  mutate(
+    annual_hours = UHRSWORKLY * WKSWORK1,
+    hourly_wage  = INCWAGE / annual_hours
+  ) %&gt;%
+  filter(!(hourly_wage &gt; 450 &amp; annual_hours &lt; 100))
+
+df_trim &lt;- df_clean %&gt;%
+  filter(INCWAGE &gt;= quantile(INCWAGE, 0.01),
+         INCWAGE &lt;= quantile(INCWAGE, 0.99)) %&gt;%
+  mutate(
+    logwage  = log(INCWAGE),
+    loghwage = log(hourly_wage),
+    educ5 = case_when(
+      EDUC == 73                ~ "HS",
+      EDUC %in% c(81,91,92,111) ~ "SomeCollege",
+      EDUC == 123               ~ "College",
+      EDUC %in% c(124,125)     ~ "Grad",
+      TRUE                      ~ "ltHS"
+    ),
+    educ5 = relevel(factor(educ5), ref = "ltHS")
+  )
+
+# Baseline Mincer regression
+m1 &lt;- lm(logwage ~ factor(AGE) + factor(EDUC) + SEX_f + STATE_f, data = df_reg)
+
+# Expanded model with age-education-gender interactions
+m2 &lt;- lm(
+  logwage ~ AGE_f + educ5 + SEX_f +
+    AGE_f:educ5 + SEX_f:educ5 + SEX_f:AGE_f +
+    STATE_f,
+  data = df_int
+)
+
+# Gender gap peaks at mid-career (age 42)
+gender_gap_college &lt;- data.frame(age = c(28, 42, 55)) %&gt;%
+  mutate(gap_W_minus_M = sapply(age, function(a)
+    pred_m2(a, "2", "College") - pred_m2(a, "1", "College")))
+
+# Robustness: decompose annual vs. hourly wage gap
+m3 &lt;- lm(loghwage ~ factor(AGE) + educ5 + SEX_f + STATE_f, data = df_int)</code></pre>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__copy">&copy; 2026 Claire Zhou. All rights reserved.</p>
+      <div class="footer__contact">
+        <a href="mailto:zhouyiduo86@gmail.com">zhouyiduo86@gmail.com</a>
+        <span class="footer__sep" aria-hidden="true">|</span>
+        <a href="https://www.linkedin.com/in/yiduo-zhou/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const toggle = document.querySelector('.nav-toggle');
+    const nav = document.querySelector('.nav');
+    const navLinks = document.querySelectorAll('.nav__link');
+
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('nav--open');
+      toggle.setAttribute('aria-expanded', open);
+    });
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('nav--open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    window.addEventListener('scroll', () => {
+      document.querySelector('.header').classList.toggle('header--scrolled', window.scrollY > 10);
+    });
+  </script>
+
+</body>
+</html>

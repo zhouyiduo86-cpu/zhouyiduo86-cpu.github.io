@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Case study: Geological Spatial Database & Exploration Mapping — ArcGIS Pro digitization and mineral exploration cartography by Claire Zhou.">
+  <title>Case Study: Geological Spatial Database &amp; Exploration Mapping | Claire Zhou</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="index.html" class="header__logo">Claire Zhou</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav" aria-label="Main navigation">
+        <ul class="nav__list">
+          <li><a href="index.html#about" class="nav__link">About</a></li>
+          <li><a href="index.html#skills" class="nav__link">Skills</a></li>
+          <li><a href="index.html#experience" class="nav__link">Experience</a></li>
+          <li><a href="index.html#projects" class="nav__link">Projects</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="code-page">
+    <section class="section">
+      <div class="container">
+        <a href="index.html#projects" class="back-link">← Back to Portfolio</a>
+
+        <h1 class="section__title">Case Study: Geological Spatial Database &amp; Exploration Mapping</h1>
+        <div class="section__divider"></div>
+
+        <!-- Executive Summary -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Executive Summary</h2>
+          <p class="case-study__text">
+            This Geographic Information Systems (GIS) project transformed historical, unstructured
+            survey records into a highly accurate spatial database. The resulting cartographic
+            deliverables isolate key structural features and highlight localized mineral occurrences
+            (Zinc, Lead, and Barium) across the Northwest Territories RED claims area.
+          </p>
+          <div class="case-study__actions">
+            <a
+              href="./RED_Claims_Mineral_Exploration_Map.jpg"
+              class="btn btn--navy"
+              download
+            >Download Exploration Map</a>
+          </div>
+        </section>
+
+        <!-- GIS Methodology & Layer Architecture -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Spatial Data Architecture</h2>
+          <p class="case-study__text">
+            The spatial database was constructed in ArcGIS Pro utilizing strict georeferencing
+            protocols. The mapped layers include:
+          </p>
+          <div class="schema-table-wrapper">
+            <table class="schema-table">
+              <thead>
+                <tr>
+                  <th scope="col">Layer</th>
+                  <th scope="col">Data Type</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mineral Occurrences</td>
+                  <td>Point Data</td>
+                  <td>Symbolized locations of Zn, Pb, and Ba showings.</td>
+                </tr>
+                <tr>
+                  <td>Structural Features</td>
+                  <td>Polyline</td>
+                  <td>Digitized fault lines and bedding orientations.</td>
+                </tr>
+                <tr>
+                  <td>Lithological Units</td>
+                  <td>Polygon</td>
+                  <td>Geologic boundaries including dolomite, limestone, and argillaceous formations.</td>
+                </tr>
+                <tr>
+                  <td>Coordinate System</td>
+                  <td>Spatial Reference</td>
+                  <td>Applied precise georeferencing grid for exploration accuracy.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Cartographic Output -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Cartographic Output</h2>
+          <div class="case-study__visual">
+            <iframe
+              src="./NWT_Geological_Spatial_Draft.pdf"
+              title="NWT Geological Spatial Draft Map (PDF)"
+            ></iframe>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__copy">&copy; 2026 Claire Zhou. All rights reserved.</p>
+      <div class="footer__contact">
+        <a href="mailto:zhouyiduo86@gmail.com">zhouyiduo86@gmail.com</a>
+        <span class="footer__sep" aria-hidden="true">|</span>
+        <a href="https://www.linkedin.com/in/yiduo-zhou/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const toggle = document.querySelector('.nav-toggle');
+    const nav = document.querySelector('.nav');
+    const navLinks = document.querySelectorAll('.nav__link');
+
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('nav--open');
+      toggle.setAttribute('aria-expanded', open);
+    });
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('nav--open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    window.addEventListener('scroll', () => {
+      document.querySelector('.header').classList.toggle('header--scrolled', window.scrollY > 10);
+    });
+  </script>
+
+</body>
+</html>

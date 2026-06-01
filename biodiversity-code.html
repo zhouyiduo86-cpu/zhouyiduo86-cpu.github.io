@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Case study: Biodiversity Extinction Risk Analysis — executive summary, data architecture, and Python data pipeline by Claire Zhou.">
+  <title>Case Study: Biodiversity Extinction Risk Analysis | Claire Zhou</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="index.html" class="header__logo">Claire Zhou</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav" aria-label="Main navigation">
+        <ul class="nav__list">
+          <li><a href="index.html#about" class="nav__link">About</a></li>
+          <li><a href="index.html#skills" class="nav__link">Skills</a></li>
+          <li><a href="index.html#experience" class="nav__link">Experience</a></li>
+          <li><a href="index.html#projects" class="nav__link">Projects</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="code-page">
+    <section class="section">
+      <div class="container">
+        <a href="index.html#projects" class="back-link">← Back to Portfolio</a>
+
+        <h1 class="section__title">Case Study: Biodiversity Extinction Risk Analysis</h1>
+        <div class="section__divider"></div>
+
+        <!-- Executive Summary & Presentation -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Executive Summary &amp; Presentation</h2>
+          <p class="case-study__text">
+            This project investigates the correspondence between reptile body mass and extinction risk
+            using a 5,000-iteration bootstrap simulation. The findings demonstrate that threatened
+            species exhibit a statistically significant higher average body mass.
+          </p>
+          <div class="case-study__actions">
+            <a
+              href="https://play.library.utoronto.ca/watch/161e0bd728544446c78e88a89307a42c"
+              class="btn btn--navy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Watch Video Presentation</a>
+            <a
+              href="./Biodiversity_Report.pdf"
+              class="btn btn--outline-navy"
+              download
+            >Download Full Report (PDF)</a>
+          </div>
+        </section>
+
+        <!-- Data Architecture & Sources -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Data Architecture &amp; Sources</h2>
+          <p class="case-study__text">
+            The analysis integrates the Amniote Life History Database and the IUCN Red List. Below
+            is the schema for the primary biological attributes analyzed.
+          </p>
+          <div class="schema-table-wrapper">
+            <table class="schema-table">
+              <thead>
+                <tr>
+                  <th scope="col">Feature Name</th>
+                  <th scope="col">Data Type</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>class</code></td>
+                  <td>String</td>
+                  <td>Taxonomic class (Filtered for &lsquo;Reptilia&rsquo;)</td>
+                </tr>
+                <tr>
+                  <td><code>genus</code></td>
+                  <td>String</td>
+                  <td>Taxonomic genus</td>
+                </tr>
+                <tr>
+                  <td><code>species</code></td>
+                  <td>String</td>
+                  <td>Taxonomic species</td>
+                </tr>
+                <tr>
+                  <td><code>adult_body_mass_g</code></td>
+                  <td>Float</td>
+                  <td>Average adult body mass in grams</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Data Cleaning Pipeline -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Data Cleaning &amp; Transformation Pipeline</h2>
+          <p class="code-page__intro">
+            Data ingestion, cleaning, and merging logic from
+            <code class="code-page__filename">biodiversity_pipeline.py</code> — loading Amniote and
+            IUCN datasets, standardizing reptile records, and producing analysis-ready merge keys.
+          </p>
+
+        <div class="code-block">
+          <pre><code>MISSING_VALUE: Final[int] = -999
+REPTILIA_CLASS: Final[str] = "reptilia"
+BODY_MASS_COLUMN: Final[str] = "adult_body_mass_g"
+SCIENTIFIC_NAME_KEY: Final[str] = "scientific_name"
+HAZARD_TIER_COLUMN: Final[str] = "hazard_tier"
+
+HIGHER_RISK_LABEL: Final[str] = "Higher Risk"
+LOWER_RISK_LABEL: Final[str] = "Lower Risk"
+
+HIGHER_RISK_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {"ex", "ew", "cr", "en", "vu"}
+)
+LOWER_RISK_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {"lc", "nt", "lr/lc", "lr/nt", "lr/cd", "lr"}
+)
+
+
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy of ``df`` with lowercased, stripped column names."""
+    normalized = df.copy()
+    normalized.columns = normalized.columns.str.strip().str.lower()
+    return normalized
+
+
+def _build_scientific_name(genus: pd.Series, species: pd.Series) -> pd.Series:
+    """
+    Construct standardized merge keys from genus and species strings.
+
+    Keys are lowercase, whitespace-trimmed, and formatted as ``'&lt;genus&gt; &lt;species&gt;'``.
+    """
+    genus_clean = genus.astype(str).str.strip().str.lower()
+    species_clean = species.astype(str).str.strip().str.lower()
+    return genus_clean + " " + species_clean
+
+
+def _replace_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Map sentinel missing values (-999) to ``pd.NA`` across the frame."""
+    return df.replace(MISSING_VALUE, pd.NA)
+
+
+def _normalize_iucn_category(category: pd.Series) -> pd.Series:
+    """
+    Normalize IUCN category strings, condensing legacy ``Lower Risk/*`` variants.
+
+    Examples
+    --------
+    ``'Lower Risk/least concern'`` → ``'lc'``
+    ``'LR/nt'`` → ``'nt'``
+    """
+    normalized = category.astype(str).str.strip().str.lower()
+
+    lr_mask = normalized.str.startswith("lower risk")
+    normalized = normalized.where(
+        ~lr_mask,
+        normalized.str.replace("lower risk/", "", regex=False),
+    )
+    normalized = normalized.str.replace("least concern", "lc", regex=False)
+    normalized = normalized.str.replace("near threatened", "nt", regex=False)
+    normalized = normalized.str.replace("conservation dependent", "lc", regex=False)
+    normalized = normalized.str.replace(" ", "", regex=False)
+
+    return normalized
+
+
+def load_and_transform_data(
+    amniote_path: Path | str,
+    iucn_path: Path | str,
+) -> pd.DataFrame:
+    """
+    Load, clean, merge, and filter Amniote and IUCN reptile datasets.
+
+    Parameters
+    ----------
+    amniote_path:
+        Path to ``Amniote_Database_Aug_2015.csv``.
+    iucn_path:
+        Path to ``IUCN_animals.csv``.
+
+    Returns
+    -------
+    pd.DataFrame
+        Inner-joined reptile records with body mass, normalized IUCN category,
+        and a binary ``hazard_tier`` column.
+    """
+    amniote_path = Path(amniote_path)
+    iucn_path = Path(iucn_path)
+
+    if not amniote_path.is_file():
+        raise FileNotFoundError(f"Amniote database not found: {amniote_path}")
+    if not iucn_path.is_file():
+        raise FileNotFoundError(f"IUCN dataset not found: {iucn_path}")
+
+    amniote_raw = pd.read_csv(amniote_path, low_memory=False)
+    iucn_raw = pd.read_csv(iucn_path, low_memory=False)
+
+    amniote = _replace_missing_values(_normalize_columns(amniote_raw))
+    iucn = _normalize_columns(iucn_raw)
+
+    required_amniote = {"class", "genus", "species", BODY_MASS_COLUMN}
+    missing_amniote = required_amniote - set(amniote.columns)
+    if missing_amniote:
+        raise ValueError(f"Amniote file missing columns: {sorted(missing_amniote)}")
+
+    category_col = "category" if "category" in iucn.columns else "iucn_category"
+    if category_col not in iucn.columns:
+        raise ValueError("IUCN file must contain a 'category' or 'iucn_category' column.")
+
+    genus_col = "genus" if "genus" in iucn.columns else "genus_name"
+    species_col = "species" if "species" in iucn.columns else "species_name"
+    if genus_col not in iucn.columns or species_col not in iucn.columns:
+        raise ValueError("IUCN file must contain genus and species identifier columns.")
+
+    amniote_reptiles = amniote[
+        amniote["class"].astype(str).str.strip().str.lower() == REPTILIA_CLASS
+    ].copy()
+
+    amniote_reptiles[SCIENTIFIC_NAME_KEY] = _build_scientific_name(
+        amniote_reptiles["genus"],
+        amniote_reptiles["species"],
+    )
+
+    iucn = iucn.copy()
+    iucn[SCIENTIFIC_NAME_KEY] = _build_scientific_name(iucn[genus_col], iucn[species_col])
+    iucn["category_normalized"] = _normalize_iucn_category(iucn[category_col])
+
+    merged = amniote_reptiles.merge(
+        iucn[[SCIENTIFIC_NAME_KEY, "category_normalized"]],
+        on=SCIENTIFIC_NAME_KEY,
+        how="inner",
+    )
+
+    merged = merged[merged["category_normalized"] != "dd"].copy()
+    merged[BODY_MASS_COLUMN] = pd.to_numeric(merged[BODY_MASS_COLUMN], errors="coerce")
+    merged = merged.dropna(subset=[BODY_MASS_COLUMN, "category_normalized"])
+
+    merged[HAZARD_TIER_COLUMN] = merged["category_normalized"].map(_map_to_hazard_tier)
+    merged = merged.dropna(subset=[HAZARD_TIER_COLUMN]).reset_index(drop=True)
+
+    return merged
+
+
+def _map_to_hazard_tier(category: str) -> str | pd.NA:
+    """
+    Map a normalized IUCN category code to a binary hazard tier label.
+
+    Returns ``'Higher Risk'``, ``'Lower Risk'``, or ``pd.NA`` for unmapped codes.
+    """
+    code = str(category).strip().lower()
+    if code in HIGHER_RISK_CATEGORIES:
+        return HIGHER_RISK_LABEL
+    if code in LOWER_RISK_CATEGORIES:
+        return LOWER_RISK_LABEL
+    return pd.NA</code></pre>
+        </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__copy">&copy; 2026 Claire Zhou. All rights reserved.</p>
+      <div class="footer__contact">
+        <a href="mailto:zhouyiduo86@gmail.com">zhouyiduo86@gmail.com</a>
+        <span class="footer__sep" aria-hidden="true">|</span>
+        <a href="https://www.linkedin.com/in/yiduo-zhou/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const toggle = document.querySelector('.nav-toggle');
+    const nav = document.querySelector('.nav');
+    const navLinks = document.querySelectorAll('.nav__link');
+
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('nav--open');
+      toggle.setAttribute('aria-expanded', open);
+    });
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('nav--open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    window.addEventListener('scroll', () => {
+      document.querySelector('.header').classList.toggle('header--scrolled', window.scrollY > 10);
+    });
+  </script>
+
+</body>
+</html>

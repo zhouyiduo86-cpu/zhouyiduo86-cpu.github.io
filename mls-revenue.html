@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Case study: MLS Revenue & Superstar Economic Impact — panel econometrics and fixed-effects regression by Claire Zhou.">
+  <title>Case Study: MLS Revenue &amp; Superstar Economic Impact | Claire Zhou</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="index.html" class="header__logo">Claire Zhou</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav" aria-label="Main navigation">
+        <ul class="nav__list">
+          <li><a href="index.html#about" class="nav__link">About</a></li>
+          <li><a href="index.html#skills" class="nav__link">Skills</a></li>
+          <li><a href="index.html#experience" class="nav__link">Experience</a></li>
+          <li><a href="index.html#projects" class="nav__link">Projects</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="code-page">
+    <section class="section">
+      <div class="container">
+        <a href="index.html#projects" class="back-link">← Back to Portfolio</a>
+
+        <h1 class="section__title">Case Study: MLS Revenue &amp; Superstar Economic Impact</h1>
+        <div class="section__divider"></div>
+
+        <!-- Executive Summary & Deliverables -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Executive Summary &amp; Deliverables</h2>
+          <p class="case-study__text">
+            This econometric study evaluates the financial impact of superstar acquisitions in Major
+            League Soccer, specifically focusing on Inter Miami CF. Utilizing a panel dataset from 2018
+            to 2024, the analysis employs fixed-effects regression models to isolate demand shocks,
+            accounting for market size, team performance, and Covid-19 disruptions.
+          </p>
+          <div class="case-study__actions">
+            <a
+              href="./MLS_Superstar_Economic_Impact.pdf"
+              class="btn btn--navy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >View Full Economic Report (PDF)</a>
+            <a
+              href="./MLS_Panel_Data_2018_2024.csv"
+              class="btn btn--outline-navy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >View Panel Dataset (CSV)</a>
+          </div>
+        </section>
+
+        <!-- Panel Data Structure -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Panel Data Structure</h2>
+          <p class="case-study__text">
+            The analysis relies on a multi-year panel dataset tracking franchise performance,
+            attendance, and market conditions.
+          </p>
+          <div class="schema-table-wrapper">
+            <table class="schema-table">
+              <thead>
+                <tr>
+                  <th scope="col">Feature Name</th>
+                  <th scope="col">Data Type</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Revenue_real</code></td>
+                  <td>Float</td>
+                  <td>Inflation-adjusted franchise revenue (Dependent Variable)</td>
+                </tr>
+                <tr>
+                  <td><code>miami2023 / miami2024</code></td>
+                  <td>Binary</td>
+                  <td>Treatment variables isolating the superstar arrival</td>
+                </tr>
+                <tr>
+                  <td><code>PctCapacity</code></td>
+                  <td>Float</td>
+                  <td>Stadium capacity utilization constraint</td>
+                </tr>
+                <tr>
+                  <td><code>MarketSize</code></td>
+                  <td>Float</td>
+                  <td>Regional market size index</td>
+                </tr>
+                <tr>
+                  <td><code>Points / Playoff</code></td>
+                  <td>Int/Binary</td>
+                  <td>Controls for team athletic performance</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Econometric Modeling -->
+        <section class="case-study__section">
+          <h2 class="case-study__heading">Econometric Modeling (Stata)</h2>
+          <p class="code-page__intro">
+            Core estimation code from
+            <code class="code-page__filename">mls_revenue_regression.do</code> — fixed-effects
+            regression with standard errors clustered at the team level.
+          </p>
+
+          <div class="code-block">
+            <pre><code>// Generate Logarithmic Revenue
+gen ln_Revenue_real = ln(Revenue_real)
+
+// Main Fixed-Effects Model with Clustered Standard Errors
+reg ln_Revenue_real ///
+    miami2023 miami2024 ///                     // Superstar treatment effects
+    i.team_id i.Year ///                        // Team and Year Fixed Effects
+    Points Playoff MarketSize PctCapacity, ///  // Athletic &amp; Market Controls
+    vce(cluster team_id)                        // Clustered Standard Errors
+
+// Robustness Check: Excluding Covid-19 Anomaly Year (2020)
+reg Revenue_real ///
+    miami2023 miami2024 ///
+    i.team_id i.Year ///
+    Points Playoff MarketSize PctCapacity ///
+    if Year != 2020, ///
+    vce(cluster team_id)</code></pre>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__copy">&copy; 2026 Claire Zhou. All rights reserved.</p>
+      <div class="footer__contact">
+        <a href="mailto:zhouyiduo86@gmail.com">zhouyiduo86@gmail.com</a>
+        <span class="footer__sep" aria-hidden="true">|</span>
+        <a href="https://www.linkedin.com/in/yiduo-zhou/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const toggle = document.querySelector('.nav-toggle');
+    const nav = document.querySelector('.nav');
+    const navLinks = document.querySelectorAll('.nav__link');
+
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('nav--open');
+      toggle.setAttribute('aria-expanded', open);
+    });
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('nav--open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    window.addEventListener('scroll', () => {
+      document.querySelector('.header').classList.toggle('header--scrolled', window.scrollY > 10);
+    });
+  </script>
+
+</body>
+</html>
